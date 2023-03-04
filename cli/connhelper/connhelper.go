@@ -3,6 +3,7 @@ package connhelper
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/url"
 
@@ -47,7 +48,12 @@ func getConnectionHelper(daemonURL string, sshFlags []string) (*ConnectionHelper
 		}
 		return &ConnectionHelper{
 			Dialer: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				return commandconn.New(ctx, "ssh", append(sshFlags, sp.Args("docker", "system", "dial-stdio")...)...)
+				args := []string{"docker"}
+				if sp.Path != "" {
+					args = append(args, "--host", fmt.Sprintf("unix://%s", sp.Path))
+				}
+				args = append(args, "system", "dial-stdio")
+				return commandconn.New(ctx, "ssh", append(sshFlags, sp.Args(args...)...)...)
 			},
 			Host: "http://docker.example.com",
 		}, nil
